@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+    <!--
+  * Please see the included README.md file for license terms and conditions.
+  -->
+
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="app_framework/2.1/css/af.ui.min.css">
+        <link rel="stylesheet" type="text/css" href="app_framework/2.1/css/icons.min.css">
+        <title>Blank App Designer Cordova Web App Project Template</title>
+       
+        <!--
+  * The "meta viewport" tag (below) helps your app size appropriately to a device's ideal viewport.
+  * Note that Windows device viewports work better when initialized using the @viewport CSS rule.
+  * For a quick overview of "meta viewport" and @viewport, see this article:
+  *   http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/quick-tip-dont-forget-the-viewport-meta-tag
+  * To see how it works, try your app on a real device with and without a "meta viewport" tag.
+  * Additional useful references include:
+  *   http://www.quirksmode.org/mobile/viewports.html
+  *   http://www.quirksmode.org/mobile/metaviewport/devices.html
+  *   https://developer.apple.com/library/safari/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html
+-->
+
+        <!-- <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1"> -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, height=device-height" />
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1, maximum-scale=2"> -->
+
+
+        <link rel="stylesheet" href="css/app.css">
+        <link rel="stylesheet" type="text/css" href="css/index_main.less.css" class="main-less">
+
+        <!-- IMPORTANT: Do not include a weinre script tag as part of your release builds! -->
+        <!-- Place your remote debugging (weinre) script URL from the Test tab here, if it does not work below -->
+        <!-- <script src="http://debug-software.intel.com/target/target-script-min.js#insertabiglongfunkynumberfromthexdkstesttab"></script> -->
+
+        <!-- Recommended location for your JavaScript libraries -->
+        <!-- These library references (below) are just examples to give you the general idea... -->
+        <!-- <script src="lib/mc/hammer.js"></script> -->
+        <!-- <script src="lib/ft/fastclick.js"></script> -->
+
+        <!--
+  * cordova.js is a phantom lib for "Cordova HTML5 web app," it does nothing in a "Standard HTML5 web app"
+  * Seeing a "Failed to load resource: net::ERR_FILE_NOT_FOUND" message caused by this "cordova.js" script?
+  * The cordova.js script is required if you convert your "Standard HTML5" project into a "Cordova" project.
+  * You can safely ignore the error or comment out this line if you will not be developing a Cordova app.
+-->
+       
+        <script src="cordova.js" id="xdkJScordova_"></script>
+ 
+
+        <script src="js/app.js"></script>
+        <!-- for your event code, see README and file comments for details -->
+        <script src="js/init-app.js"></script>
+        <!-- for your init code, see README and file comments for details -->
+        <script src="xdk/init-dev.js"></script>
+        <!-- normalizes device and document ready events, see file for details -->
+        
+        <!-- Importando biblioteca do PushPlugin -->
+        <script src="js/PushNotification.js"></script>
+    
+        <script type="text/javascript">
+            
+            var tokenID = "";
+            var data_token = "";
+            var pushURL = "";
+                
+            function send_notification(tokenID)
+        {
+            
+           data_token = encodeURIComponent(tokenID);
+           var xhr = new XMLHttpRequest();
+           xhr.open("GET", 'http://nucleoart.com/meupatrocinio/android.php?token='+data_token, false); 
+            // beta http://beta.sodtechnologies.com/skadate/meupatricinio/member/login_app.php
+           //produção https://dating.meupatrocinio.com/member/login_app.php ?token=
+           xhr.send();
+          
+            
+        }
+            var pushNotification;
+            
+            function onDeviceReady() {
+            
+                $.ui.useOSThemes=false;
+                
+               // $("#console").append('<p>-> Aplicativo iniciado!</p>');
+                
+                // Instanciando plugin Push...
+                pushNotification = window.plugins.pushNotification;
+
+                // Iniciar serviço de Push no aplicativo...
+                pushNotification.register(
+                    function (result) {
+                        //$("#console").append('<p>-> SUCESSO: '+ result+'</p>');
+                    }, 
+                    function (error) {
+                        //$("#console").append('<p>-> ERRO: '+error+'</p>');
+                    }, 
+                    {
+                        "senderID":"555244372957",// produção 377851441623
+                        "ecb":"capturarEventos"
+                    }
+                );
+                    
+           
+                 //capturando o botão de voltar 
+             
+            }
+            
+            // capturar notificações recebidos da API Google Cloud Messaging (GCM)...
+            function capturarEventos(e) {
+                
+               
+                switch( e.event )
+                {
+                    // Dispositivo registrado no GCM!!!
+                    case 'registered':
+                            
+                        console.log("TOKEN = " + e.regid);
+                        tokenID = e.regid;
+                        send_notification(tokenID);
+                        
+                        abrirURL(pushURL);
+                     
+                        //beta http://beta.sodtechnologies.com/skadate/meupatricinio/";
+                        //produção https://dating.meupatrocinio.com/member/featured_list.php
+                       // esconde_loading();
+                        break;
+                    
+                    // Chegou uma notificação push!!!
+                    case 'message':
+                        
+                        // Verificar se push message chegou com o app aberto (em foreground)...
+                        // Em caso positivo, lançamos um alerta (som, janela, etc.) para chamar atenção...  
+                        pushURL = e.payload.pushURL;
+                        abrirURL(PushURL);
+                        // Compondo mensagem...
+                        $("#console").append('<p>MENSAGEM: ' + e.payload.message + '</p>');
+                        
+                        break;
+                    
+                    case 'error':
+						  $("#console").append('<p>-> ERRO:' + e.msg+'</p>' );
+                        break;
+                    
+                    default:
+						  $("#console").append('<p>-> EVENTO: Desconhecido, um envento estranho foi capturado.</p>');
+                        break;
+                }
+            }
+            
+			document.addEventListener('app.Ready', onDeviceReady, true);// Verifica se está on
+            function abrirURL(PushURL) 
+            {
+               
+                     if(pushURL === ""){
+                            window.location = "https://dating.meupatrocinio.com/";
+                         
+                     }else{
+                         window.location = "https://dating.meupatrocinio.com/"+pushURL;
+                         
+                }
+            }
+            
+            //document.addEventListener("offline", onOffline, false); // Verifica se está off
+            function onOffline() 
+            {
+            document.getElementById("content").style.display = "block";// MOSTRA o loading
+            }
+            function esconde_loading() 
+            {
+            document.getElementById("content").style.display = "none";// some o loading
+            }
+            
+
+           
+        </script>
+        <!--            
+            You may substitute jQuery for the App Framework selector library.
+            See http://app-framework-software.intel.com/documentation.php#afui/afui_jquery
+        -->
+        <script type="application/javascript" src="app_framework/2.1/appframework.js"></script>
+        <script type="application/javascript" src="app_framework/2.1/appframework.ui.js" data-ver="1"></script>
+
+        <script type="application/javascript" src="app_framework/themeRelease.js"></script>
+    </head>
+
+    <body id="afui" class="android light" style="background-color:#000">
+
+        <!-- IMPORTANT: Do not include a weinre script tag as part of your release builds! -->
+        <!-- Place your remote debugging (weinre) script URL from the Test tab here, if it does not work above -->
+        <!-- <script src="http://debug-software.intel.com/target/target-script-min.js#insertabiglongfunkynumberfromthexdkstesttab"></script> -->
+        <div class="uwrap" id="content">
+            <div class="upage vertical-col panel" id="mainpage" data-header="none" data-footer="none"><span id="console" style="word-wrap: break-word!important;"></span>
+                <div align="center" style="margin-top:40%">
+                    <img src="img/logotipo_meu-pat.png">
+                    <p>&nbsp;</p>
+                    <p>&nbsp;</p>
+                    <p>&nbsp;</p>
+                    <hi>INICIANDO ...</hi>
+                    <p>
+                        <img src="img/loading.gif" width="80%">
+                    </p>
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>
